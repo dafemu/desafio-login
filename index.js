@@ -25,13 +25,18 @@ function auth(req, res, next) {
   return res.status(401).send("error de autorización");
 }
 
+app.get("/login", (req, res) => {
+  res.redirect('/index.html');
+});
+
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
   if (username !== "pepe" || password !== "pepepass") {
     return res.send("login failed");
   }
   req.session.user = username;
-  res.send("login success!");
+  res.redirect('/welcome.html');
+  // res.send("login success!");
 });
 
 app.get("/logout", (req, res) => {
@@ -39,13 +44,15 @@ app.get("/logout", (req, res) => {
     if (!err) res.send("Logout Ok!");
     else res.send("Error");
   });
+  res.redirect('/logout.html');
 });
 
 app.get("/privada", auth, (req, res) => {
-  res.send("Estoy en una ruta privada");
+  res.redirect('/welcome.html');
+  // res.send("Estoy en una ruta privada");
 });
 
 
-app.listen(3000, () => {
+app.listen(8080, () => {
     console.log('servidor escuchando');
 });
