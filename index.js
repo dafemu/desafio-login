@@ -7,6 +7,9 @@ const MongoStore = require("connect-mongo");
 
 app.use(cookieParser());
 
+app.set("view engine", "ejs");
+app.set("views", "./views");
+
 app.use(express.static("public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -26,7 +29,8 @@ function auth(req, res, next) {
 }
 
 app.get("/login", (req, res) => {
-  res.redirect('/index.html');
+  // res.redirect('/index.html');
+  res.render("layouts/index");
 });
 
 app.post("/login", (req, res) => {
@@ -35,7 +39,8 @@ app.post("/login", (req, res) => {
     return res.send("login failed");
   }
   req.session.user = username;
-  res.redirect('/welcome.html');
+  res.render("layouts/welcome", { username });
+  // res.redirect('/welcome.html');
   // res.send("login success!");
 });
 
@@ -44,11 +49,18 @@ app.get("/logout", (req, res) => {
     if (!err) res.send("Logout Ok!");
     else res.send("Error");
   });
-  res.redirect('/logout.html');
+  const user = req.session.user;
+  // res.redirect('/logout.html');
+  res.render("layouts/logout", { user });
+  setTimeout(()=>{
+    res.render("layouts/index", { user });
+  },2000);
 });
 
 app.get("/privada", auth, (req, res) => {
-  res.redirect('/welcome.html');
+  const user = req.session.user;
+  res.render("layouts/welcome", { user });
+  // res.redirect('/welcome.html');
   // res.send("Estoy en una ruta privada");
 });
 
