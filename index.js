@@ -1,25 +1,38 @@
-const express = require("express");
-const session = require("express-session");
-const cookieParser = require("cookie-parser");
-const app = express();
+import express from "express";
+import cookieParser from "cookie-parser";
+import session from "express-session";
+import exphbs from "express-handlebars";
+import path from "path";
 
-const MongoStore = require("connect-mongo");
+import User from "./models/User.js";
+import "./db/config.js";
+
+const app = express();
 
 app.use(cookieParser());
 
-app.set("view engine", "ejs");
-app.set("views", "./views");
+app.set("views", path.join(path.dirname(""), "./views"));
+app.engine(
+  ".hbs",
+  exphbs.engine({
+    defaultLayout: "main",
+    layoutsDir: path.join(app.get("views"), "layouts"),
+    extname: ".hbs",
+  })
+);
+app.set("view engine", ".hbs");
 
-app.use(express.static("public"));
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    store: new MongoStore({ mongoUrl: "mongodb://localhost/sesiones" }),
-    secret: "coderhouse",
-    resave: true,
-    saveUninitialized: true,
+    secret: "1234567890!@#$%^&*()",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      maxAge: 200000,
+    },
   })
 );
 
@@ -28,42 +41,43 @@ function auth(req, res, next) {
   return res.status(401).send("error de autorización");
 }
 
-app.get("/login", (req, res) => {
-  // res.redirect('/index.html');
-  res.render("layouts/index");
+app.get("/", (req, res) => {
+  if (req.session.nombre) {
+    res.redirect("/datos");
+  } else {
+    res.redirect("/login");
+  }
 });
 
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
-  if (username !== "pepe" || password !== "pepepass") {
-    return res.send("login failed");
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
+app.get("/login-error", (req, res) => {
+  res.render("login-error");
+});
+
+app.post(
+  "/login",(req, res) => {
+    res.redirect("/datos");
   }
-  req.session.user = username;
-  res.render("layouts/welcome", { username });
-  // res.redirect('/welcome.html');
-  // res.send("login success!");
+);
+
+app.get("/datos", auth, async (req, res) => {
+  const datosUsuario = await User.findById(req.user._id).lean();
+  res.render("datos", {
+    datosUsuario,
+  });
 });
 
 app.get("/logout", (req, res) => {
-  req.session.destroy((err) => {
-    if (!err) res.send("Logout Ok!");
-    else res.send("Error");
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
+    res.redirect("/");
   });
-  const user = req.session.user;
-  // res.redirect('/logout.html');
-  res.render("layouts/logout", { user });
-  setTimeout(()=>{
-    res.render("layouts/index", { user });
-  },2000);
 });
-
-app.get("/privada", auth, (req, res) => {
-  const user = req.session.user;
-  res.render("layouts/welcome", { user });
-  // res.redirect('/welcome.html');
-  // res.send("Estoy en una ruta privada");
-});
-
 
 app.listen(8080, () => {
     console.log('servidor escuchando');
