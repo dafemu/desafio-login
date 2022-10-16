@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
 
-mongoose.connect("mongodb://localhost:27017/login");
+mongoose.connect("mongodb://localhost:27017/sesiones");
 
 export default mongoose;
